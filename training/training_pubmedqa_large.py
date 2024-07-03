@@ -50,18 +50,25 @@ def preprocess_data(model, file_name, tokenizer, custom_block, expand_vocab):
         model, tokenizer = expand_vocab(model, tokenizer)
     #max_length = tokenizer.model_max_length
     max_length_list = [124, 253, 494, 754, 1020]
-    max_length = max_length_list[-1]
+    max_length = max_length_list[4]
     #only need to do [4] and i think [0] again with more time
 
     if custom_block == False:
-        datasets = load_dataset("text", data_files={"train": file_name})
+        big_text = ""
+        with open(file_name, "r") as text:
+            for line in text:
+                big_text+=(line.strip("\n").strip().strip(",")+"|")
+        datasets = []
+        for x in range(0, len(big_text), 1024):
+            #print(big_text[x:x+1024].strip("\n"))
+            datasets.append(big_text[x:x+1024].strip("\n"))
         data_dic = {}
         data_dic["input_ids"] = []
         data_dic["attention_mask"] = []
         data_dic["labels"] = []
-        for x in datasets["train"]:
+        for x in datasets:
             #print(x)
-            tokenized_data = tokenizer(x["text"], padding="max_length", truncation=True)
+            tokenized_data = tokenizer(x, padding="max_length", truncation=True)
             data_dic["input_ids"].append(tokenized_data["input_ids"])
             data_dic["attention_mask"].append(tokenized_data["attention_mask"])
             data_dic["labels"].append(tokenized_data["input_ids"])
@@ -94,7 +101,7 @@ def preprocess_data(model, file_name, tokenizer, custom_block, expand_vocab):
     return ds, model, tokenizer, max_length
 
 def training_and_eval(datasets, model, m_name, tokenizer, file_name, lora, custom_block, max_length, expand_vocab, val):
-    date = datetime.datetime.now().strftime("%d/%m/%Y")
+    date = datetime.datetime.now().strftime("%d_%m_%Y")
 
     if lora == True:
         epochs=1
@@ -148,11 +155,10 @@ def training_and_eval(datasets, model, m_name, tokenizer, file_name, lora, custo
     else:
         epochs=1
         if custom_block == True:
-            special=f"custom_block_{custom_block}_{max_length}_expandvocab_{expand_vocab}_date_{date}"
+            special=f"custom_block_{custom_block}_{max_length}_date_{date}_path_gene_desc"
         else:
-            special=f"expandvocab_{expand_vocab}_trainingfile{val}_date{date}"
+            special=f"custom_block_{custom_block}_path_gene_desc_date_{date}_v10"
         
-
         output_dir_name = f"./{m_name}_finetuned_{epochs}_epochs_{special}"
 
         training_args = TrainingArguments(
@@ -161,7 +167,7 @@ def training_and_eval(datasets, model, m_name, tokenizer, file_name, lora, custo
                 per_device_train_batch_size=8,
                 per_device_eval_batch_size=8,
                 warmup_steps=500,
-                #fp16=True,
+                fp16=True,
                 gradient_accumulation_steps=8,
                 weight_decay=0.01,
                 logging_dir="./logs",
@@ -187,11 +193,6 @@ def training_and_eval(datasets, model, m_name, tokenizer, file_name, lora, custo
         
     torch.cuda.empty_cache()
     trainer.train()
-
-    max_token_id = len(tokenizer.get_vocab())
-    model_vocab_size = model.config.vocab_size
-    print("After training:", max_token_id, model_vocab_size)
-    #after training also same size!
     
     trainer.save_model()
     tokenizer.save_pretrained(output_dir_name)
@@ -207,7 +208,6 @@ def training_and_eval(datasets, model, m_name, tokenizer, file_name, lora, custo
 
 def main():
     m_name = "BioGPT-Large-PubMedQA"
-    #m_name = "BioGPT-Large"
     #example()
     tokenizer = AutoTokenizer.from_pretrained(m_name)
 
@@ -218,10 +218,13 @@ def main():
     #val 5_n_genes2: same as val 3 but without gene and with 2 genes per pathway
     #val 5_n_genes3: same as above but with 3 genes per pathway
 
-    #val = 4
+    val = 4
     #val = "5_n_genes2"
-    val = "5_n_genes3"
-    file_name = f"/exports/sascstudent/svanderwal2/programs/test_new_models/training_data/custom_traintest_{val}.txt"
+    #val = "5_n_genes3"
+    #file_name = f"/exports/sascstudent/svanderwal2/programs/test_new_models/training_data/custom_traintest_{val}.txt"
+
+    file_name = "/exports/sascstudent/svanderwal2/programs/test_new_models/training_data/training_data_one_gene_multiple_pathways_18_04.txt"
+    #file_name = "/exports/sascstudent/svanderwal2/programs/test_new_models/training_data/custom_traintest_1.txt"
     model = AutoModelForCausalLM.from_pretrained(m_name)
 
     lora = False
