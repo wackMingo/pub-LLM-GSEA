@@ -140,6 +140,25 @@ def write5(new_dic):
             file.write(f"{new_dic[pathway][gene+2][0]} ") 
     file.close()
 
+def recombination(new_dic):
+    gene_pathways_dic = {}
+    for pathway in new_dic:
+        gene_list = new_dic[pathway]
+        pathway = pathway.strip().strip("\n")
+        for gene in gene_list:
+            if gene_pathways_dic.get(gene) == None:
+                gene_pathways_dic[gene] = [pathway]
+            else:
+                gene_pathways_dic[gene].append(pathway)
+    
+    file = open("training_data_one_gene_multiple_pathways_18_04.txt", "w")
+    for gene in gene_pathways_dic:
+        file.write("\n"+gene+": ")
+        for pathway in set(gene_pathways_dic[gene]):
+            file.write(pathway+", ")
+    file.close()
+
+
 
 
 
@@ -150,38 +169,47 @@ def main():
     #val 2: Pathway: Prostaglandin synthesis and regulation | Genes: ['CYP11A1', 'ANXA5', 'EDNRB', 'PTGER4', 'S100A10', 'S100A6', 'PTGFR', 'PTGIS', 'PTGER2', 'PTGER1', 'HPGD', 'PTGS2', 'PRL', 'PLA2G4A', 'ANXA4', 'SCGB1A1', 'PTGDS', 'EDN1', 'ANXA3', 'HSD11B1', 'ANXA1', 'PTGDR', 'PTGIR', 'HSD11B2', 'PTGS1', 'ANXA6', 'EDNRA', 'TBXAS1', 'PTGER3', 'ANXA2', 'ABCC4', 'HPGDS', 'MITF', 'PTGES', 'PPARG', 'PPARGC1A', 'PPARGC1B', 'SOX9', 'AKR1B1', 'AKR1C3', 'CBR1', 'AKR1C1', 'AKR1C2', 'AKR1C1', 'TBXA2R', 'PTGFRN']
     #val 3: Pathway: Target of rapamycin signaling | Gene RPS6KB1
     #val 4: Pathway: 17q12 copy number variation syndrome | Gene: SLC35G3 | Gene description: solute carrier family 35 member G3 | Gene synonym name: TMEM21A
-    #val 5: 1 pathway two genes
-    #val 6: 1 pathway three genes
+    #val 5_2: 1 pathway two genes
+    #val 5_3: 1 pathway three genes
+    pathway_genes = False
     
-    if val == 1:
-        #run this if you want to make custom vocab, need to make better system to make vocab to expand vocab
-        conv_dic, vocab_dic = read()
-        new_dic = part_two(conv_dic, vocab_dic)
-        write(new_dic)
+    if pathway_genes == True:
+        if val == 1:
+            #run this if you want to make custom vocab, need to make better system to make vocab to expand vocab
+            conv_dic, vocab_dic = read()
+            new_dic = part_two(conv_dic, vocab_dic)
+            write(new_dic)
 
-    if val == 2:
+        if val == 2:
+            vocab_dic = read2()
+            val_conv = 0
+            new_dic = part_two_2(vocab_dic, val_conv)
+            write2(new_dic)
+
+        if val == 3:
+            vocab_dic = read2()
+            val_conv = 0
+            new_dic = part_two_2(vocab_dic, val_conv)
+            write3(new_dic)
+
+        if val == 4:
+            vocab_dic = read2()
+            val_conv = 1
+            new_dic = part_two_2(vocab_dic, val_conv)
+            write4(new_dic)
+
+        if val == 5:
+            vocab_dic = read2()
+            val_conv = 1
+            new_dic = part_two_2(vocab_dic, val_conv)
+            write5(new_dic)
+
+    else:
         vocab_dic = read2()
+        #print(vocab_dic)
         val_conv = 0
         new_dic = part_two_2(vocab_dic, val_conv)
-        write2(new_dic)
-
-    if val == 3:
-        vocab_dic = read2()
-        val_conv = 0
-        new_dic = part_two_2(vocab_dic, val_conv)
-        write3(new_dic)
-
-    if val == 4:
-        vocab_dic = read2()
-        val_conv = 1
-        new_dic = part_two_2(vocab_dic, val_conv)
-        write4(new_dic)
-
-    if val == 5:
-        vocab_dic = read2()
-        val_conv = 1
-        new_dic = part_two_2(vocab_dic, val_conv)
-        write5(new_dic)
+        recombination(new_dic)
     
 
     #make like 80/20 split
